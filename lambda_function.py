@@ -8,7 +8,6 @@ def indent(text, prefix):
     return "\n".join(prefix + line if line.strip() else line for line in text.splitlines())
 
 def replace_local_images_with_base64(svg_text):
-    # Encuentra todas las rutas locales de imágenes
     pattern = r'xlink:href=["\']([^"\']+\.png)["\']'
     matches = re.findall(pattern, svg_text)
     for img_path in set(matches):
@@ -31,7 +30,7 @@ def handler(event, context):
                 "body": "Error: El campo 'body' debe ser un string con el código del diagrama."
             }
 
-        # Generar PNG y SVG
+        # Generar el código completo del diagrama
         diagram_code = f"""
 from diagrams import Diagram
 from diagrams.aws.compute import EC2
@@ -45,24 +44,23 @@ with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp
 
         result = {}
 
-        # PNG codificado en base64
+        # PNG como Base64
         with open("/tmp/diagram.png", "rb") as f:
             result["png_image"] = "data:image/png;base64," + base64.b64encode(f.read()).decode("utf-8")
         os.remove("/tmp/diagram.png")
 
-        # SVG con imágenes embebidas
+        # Leer el SVG y reemplazar imágenes locales por base64
         with open("/tmp/diagram.svg", "r", encoding="utf-8") as f:
             svg_text = f.read()
         os.remove("/tmp/diagram.svg")
 
-        # Reemplazar imágenes locales por base64
         svg_inlined = replace_local_images_with_base64(svg_text)
-        result["svg_image"] = svg_inlined
+        result["svg_image"] = svg_inlined  # SVG sin escapar, útil para pegar directamente
 
         return {
             "statusCode": 200,
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps(result)
+            "body": json.dumps(result, ensure_ascii=False)
         }
 
     except Exception:
