@@ -30,7 +30,7 @@ def handler(event, context):
                 "body": "Error: El campo 'body' debe ser un string con el código del diagrama."
             }
 
-        # Generar el código completo del diagrama
+        # Generar PNG y SVG
         diagram_code = f"""
 from diagrams import Diagram
 from diagrams.aws.compute import EC2
@@ -44,18 +44,19 @@ with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp
 
         result = {}
 
-        # PNG como Base64
+        # PNG codificado en base64
         with open("/tmp/diagram.png", "rb") as f:
             result["png_image"] = "data:image/png;base64," + base64.b64encode(f.read()).decode("utf-8")
         os.remove("/tmp/diagram.png")
 
-        # Leer el SVG y reemplazar imágenes locales por base64
+        # SVG leído y procesado
         with open("/tmp/diagram.svg", "r", encoding="utf-8") as f:
             svg_text = f.read()
         os.remove("/tmp/diagram.svg")
 
         svg_inlined = replace_local_images_with_base64(svg_text)
-        result["svg_image"] = svg_inlined  # SVG sin escapar, útil para pegar directamente
+        result["svg_image_raw"] = svg_inlined
+        result["svg_image_base64"] = "data:image/svg+xml;base64," + base64.b64encode(svg_inlined.encode("utf-8")).decode("utf-8")
 
         return {
             "statusCode": 200,
