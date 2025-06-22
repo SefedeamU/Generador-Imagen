@@ -1,0 +1,22 @@
+org: m4guiluch0
+service: diagrams-lambda
+provider:
+  name: aws
+  region: us-east-1
+  timeout: 30
+  iam:
+    role: arn:aws:iam::195602400559:role/LabRole
+
+  ecr:
+    images:
+      diagramscontainer:      # nombre en minúsculas y sin mayúsculas
+        path: .
+functions:
+  api:
+    image:
+      name: diagramscontainer
+    events:
+      - httpApi:
+          path: /diagram
+          method: post   # <-- aquí lo cambias a POST
+
