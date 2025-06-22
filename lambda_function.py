@@ -1,18 +1,23 @@
-import json
-import os
-import base64
-import traceback
-
+import json, os, base64, traceback, re
 from diagrams import Diagram
 from diagrams.aws.compute import EC2
 from diagrams.aws.database import RDS
 from diagrams.aws.network import ELB
 
 def indent(text, prefix):
-    return "\n".join(
-        prefix + line if line.strip() else line
-        for line in text.splitlines()
-    )
+    return "\n".join(prefix + line if line.strip() else line for line in text.splitlines())
+
+def replace_local_images_with_base64(svg_text):
+    # Encuentra todas las rutas locales de imágenes
+    pattern = r'xlink:href=["\']([^"\']+\.png)["\']'
+    matches = re.findall(pattern, svg_text)
+    for img_path in set(matches):
+        if os.path.exists(img_path):
+            with open(img_path, 'rb') as f:
+                img_b64 = base64.b64encode(f.read()).decode('utf-8')
+                data_uri = f'data:image/png;base64,{img_b64}'
+                svg_text = svg_text.replace(img_path, data_uri)
+    return svg_text
 
 def handler(event, context):
     try:
@@ -26,8 +31,8 @@ def handler(event, context):
                 "body": "Error: El campo 'body' debe ser un string con el código del diagrama."
             }
 
-        # Crear archivo Python temporal para ejecutar el diagrama
-        diagram_template = f"""
+        # Generar PNG y SVG
+        diagram_code = f"""
 from diagrams import Diagram
 from diagrams.aws.compute import EC2
 from diagrams.aws.database import RDS
@@ -36,29 +41,27 @@ from diagrams.aws.network import ELB
 with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp/diagram"):
 {indent(user_code, "    ")}
 """
-        exec(diagram_template, {})
+        exec(diagram_code, {})
 
-        # Leer el archivo SVG como texto (sin codificar)
-        with open("/tmp/diagram.svg", "r", encoding="utf-8") as f:
-            svg_raw = f.read()
-        os.remove("/tmp/diagram.svg")
+        result = {}
 
-        # Leer el archivo PNG y codificar en base64
+        # PNG codificado en base64
         with open("/tmp/diagram.png", "rb") as f:
-            png_encoded = base64.b64encode(f.read()).decode("utf-8")
+            result["png_image"] = "data:image/png;base64," + base64.b64encode(f.read()).decode("utf-8")
         os.remove("/tmp/diagram.png")
 
-        # Construir respuesta JSON
-        result = {
-            "svg_image_raw": svg_raw,
-            "png_image": f"data:image/png;base64,{png_encoded}"
-        }
+        # SVG con imágenes embebidas
+        with open("/tmp/diagram.svg", "r", encoding="utf-8") as f:
+            svg_text = f.read()
+        os.remove("/tmp/diagram.svg")
+
+        # Reemplazar imágenes locales por base64
+        svg_inlined = replace_local_images_with_base64(svg_text)
+        result["svg_image"] = svg_inlined
 
         return {
             "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json"
-            },
+            "headers": {"Content-Type": "application/json"},
             "body": json.dumps(result)
         }
 
