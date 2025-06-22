@@ -10,13 +10,8 @@ def indent(text, prefix):
 
 def handler(event, context):
     try:
-        raw_body = event.get("body", "")
-        parsed = json.loads(raw_body) if isinstance(raw_body, str) else raw_body
-        user_code = parsed.get("body", "")
-        if not isinstance(user_code, str) or not user_code.strip():
-            return {"statusCode": 400,
-                    "body": "Error: El campo 'body' debe ser un string con el código del diagrama."}
-
+        # parseo igual que antes...
+        
         diagram_template = f'''
 from diagrams import Diagram
 from diagrams.aws.compute import EC2
@@ -26,24 +21,23 @@ from diagrams.aws.network import ELB
 with Diagram("Mi Diagrama", show=False, outformat=["png","svg"], filename="/tmp/diagram"):
 {indent(user_code, "    ")}
 '''
-
         exec(diagram_template, {})
 
-        result = {}
-
-        # Leer SVG como texto plano
-        svg_path = "/tmp/diagram.svg"
-        with open(svg_path, "r", encoding="utf-8") as f:
+        # Leer SVG como texto
+        with open("/tmp/diagram.svg", "r", encoding="utf-8") as f:
             svg_text = f.read()
-        os.remove(svg_path)
-        result["svg_image"] = svg_text
+        os.remove("/tmp/diagram.svg")
 
-        # Leer PNG y codificar
-        png_path = "/tmp/diagram.png"
-        with open(png_path, "rb") as f:
+        # Leer PNG codificado
+        with open("/tmp/diagram.png", "rb") as f:
             png_b64 = base64.b64encode(f.read()).decode("utf-8")
-        os.remove(png_path)
-        result["png_image"] = f"data:image/png;base64,{png_b64}"
+        os.remove("/tmp/diagram.png")
+
+        # Armar JSON
+        result = {
+            "svg_image_raw": svg_text,
+            "png_image": f"data:image/png;base64,{png_b64}"
+        }
 
         return {
             "statusCode": 200,
