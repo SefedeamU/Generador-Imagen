@@ -62,12 +62,22 @@ def replace_local_images_with_base64(svg_text):
     return svg_text
 
 def handler(event, context):
+    print("🚀 Evento recibido:")
+    print(json.dumps(event, indent=2))
+
     try:
         raw_body = event.get("body", "")
+        print("📩 raw_body:", raw_body)
+
         parsed = json.loads(raw_body) if isinstance(raw_body, str) else raw_body
+        print("🧾 parsed:", parsed)
+
         user_code = parsed.get("body", "")
+        print("🖊️ Código de usuario:", user_code)
 
         if not isinstance(user_code, str) or not user_code.strip():
+            error_message = "El campo 'body' debe ser un string con código válido."
+            print("⚠️", error_message)
             return {
                 "statusCode": 400,
                 "headers": {
@@ -75,7 +85,7 @@ def handler(event, context):
                     "Access-Control-Allow-Origin": "*",
                     "Access-Control-Allow-Headers": "*"
                 },
-                "body": json.dumps({"error": "El campo 'body' debe ser un string con código válido."})
+                "body": json.dumps({"error": error_message})
             }
 
         diagram_code = f"""
@@ -84,18 +94,25 @@ from diagrams import Diagram, Cluster
 with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp/diagram"):
 {indent(user_code, "    ")}
 """
+        print("📜 Código completo que se ejecutará:\n", diagram_code)
+
         exec(diagram_code, globals())
+        print("✅ Diagrama generado exitosamente")
 
         result = {}
+
         with open("/tmp/diagram.png", "rb") as f:
             result["png_image"] = "data:image/png;base64," + base64.b64encode(f.read()).decode()
         os.remove("/tmp/diagram.png")
+        print("🖼️ Imagen PNG leída y codificada")
 
         with open("/tmp/diagram.svg", "r", encoding="utf-8") as f:
             svg_text = f.read()
         os.remove("/tmp/diagram.svg")
+        print("📄 Imagen SVG leída")
 
         result["svg_image"] = replace_local_images_with_base64(svg_text)
+        print("🧪 SVG procesado con imágenes embebidas")
 
         return {
             "statusCode": 200,
@@ -107,7 +124,10 @@ with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp
             "body": json.dumps(result, ensure_ascii=False)
         }
 
-    except Exception:
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        print("💥 Excepción atrapada:")
+        print(error_trace)
         return {
             "statusCode": 500,
             "headers": {
@@ -117,6 +137,6 @@ with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp
             },
             "body": json.dumps({
                 "error": "Error al generar diagrama",
-                "trace": traceback.format_exc()
+                "trace": error_trace
             }, ensure_ascii=False)
         }
