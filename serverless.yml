@@ -1,18 +1,23 @@
 org: ghostlambda
+app: generador-diagramas
 service: diagrams-lambda
 
 provider:
   name: aws
-  # Ya que usas contenedor, el runtime lo ignora
   region: us-east-1
   timeout: 29
   iam:
     role: arn:aws:iam::137805459264:role/ServerlessDeploymentRole
 
+  ecr:
+    images:
+      graphviz:
+        path: .  # Ruta donde está tu Dockerfile
+
 functions:
   api:
     image:
-      uri: 137805459264.dkr.ecr.us-east-1.amazonaws.com/gosip/graphviz
+      name: graphviz
     events:
       - http:
           path: diagram
