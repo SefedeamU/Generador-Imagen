@@ -47,18 +47,6 @@ from diagrams.gcp.operations import *
 from diagrams.gcp.security import *
 from diagrams.gcp.storage import *
 
-from diagrams.aws.compute import EC2, Lambda
-from diagrams.aws.database import RDS, DynamodbTable
-from diagrams.aws.integration import SQS
-from diagrams.aws.storage import S3
-from diagrams.aws.analytics import RedshiftDenseComputeNode, Glue
-from diagrams.aws.devtools import Codepipeline
-from diagrams.gcp.analytics import Bigquery
-from diagrams.gcp.data import Dataflow
-from diagrams.gcp.storage import GCS
-from diagrams.gcp.compute import AppEngine, Functions
-from diagrams.gcp.iot import IotCore
-from diagrams.gcp.logging import Logging, Monitoring
 
 def indent(text, prefix):
     return "\n".join(prefix + line if line.strip() else line for line in text.splitlines())
@@ -73,34 +61,23 @@ def replace_local_images_with_base64(svg_text):
             svg_text = svg_text.replace(img_path, f'data:image/png;base64,{img_b64}')
     return svg_text
 
-def ajustar_colores_svg(svg: str) -> str:
-    # Reemplaza fondos blancos en clusters por gris oscuro
-    svg = svg.replace('fill="#ffffff"', 'fill="#1a1a1a"')
-    svg = svg.replace('fill="#fff"', 'fill="#1a1a1a"')
-    svg = svg.replace('fill:white', 'fill:#1a1a1a')
-    svg = svg.replace('stroke="white"', 'stroke="#1a1a1a"')
-    svg = svg.replace('fill="white"', 'fill="#1a1a1a"')
-
-    # Forzar texto blanco
-    svg = re.sub(r'(<text[^>]*?)fill="[^"]*"', r'\1fill="white"', svg)
-    svg = re.sub(r'(style="[^"]*?)fill:\s?#?[0-9a-fA-F]{3,6};?', r'\1fill:white;', svg)
-    return svg
-
 def handler(event, context):
-    print("🚀 Evento recibido:")
+    print("ðŸš€ Evento recibido:")
     print(json.dumps(event, indent=2))
 
     try:
         raw_body = event.get("body", "")
-        print("📩 raw_body:", raw_body)
+        print("ðŸ“© raw_body:", raw_body)
 
         parsed = json.loads(raw_body) if isinstance(raw_body, str) else raw_body
-        print("🧾 parsed:", parsed)
+        print("ðŸ§¾ parsed:", parsed)
 
         user_code = parsed.get("body", "")
-        print("🖊️ Código de usuario:", user_code)
+        print("ðŸ–Šï¸ CÃ³digo de usuario:", user_code)
 
         if not isinstance(user_code, str) or not user_code.strip():
+            error_message = "El campo 'body' debe ser un string con cÃ³digo vÃ¡lido."
+            print("âš ï¸", error_message)
             return {
                 "statusCode": 400,
                 "headers": {
@@ -108,7 +85,7 @@ def handler(event, context):
                     "Access-Control-Allow-Origin": "*",
                     "Access-Control-Allow-Headers": "*"
                 },
-                "body": json.dumps({"error": "El campo 'body' debe ser un string con código válido."})
+                "body": json.dumps({"error": error_message})
             }
 
         diagram_code = f"""
@@ -117,27 +94,25 @@ from diagrams import Diagram, Cluster
 with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp/diagram"):
 {indent(user_code, "    ")}
 """
-        print("📜 Código completo que se ejecutará:\n", diagram_code)
+        print("ðŸ“œ CÃ³digo completo que se ejecutarÃ¡:\n", diagram_code)
 
         exec(diagram_code, globals())
-        print("✅ Diagrama generado exitosamente")
+        print("âœ… Diagrama generado exitosamente")
 
         result = {}
 
         with open("/tmp/diagram.png", "rb") as f:
             result["png_image"] = "data:image/png;base64," + base64.b64encode(f.read()).decode()
         os.remove("/tmp/diagram.png")
-        print("🖼️ Imagen PNG leída y codificada")
+        print("ðŸ–¼ï¸ Imagen PNG leÃ­da y codificada")
 
         with open("/tmp/diagram.svg", "r", encoding="utf-8") as f:
             svg_text = f.read()
         os.remove("/tmp/diagram.svg")
-        print("📄 Imagen SVG leída")
+        print("ðŸ“„ Imagen SVG leÃ­da")
 
-        svg_with_images = replace_local_images_with_base64(svg_text)
-        svg_final = ajustar_colores_svg(svg_with_images)
-        result["svg_image"] = svg_final
-        print("🧪 SVG procesado con colores corregidos")
+        result["svg_image"] = replace_local_images_with_base64(svg_text)
+        print("ðŸ§ª SVG procesado con imÃ¡genes embebidas")
 
         return {
             "statusCode": 200,
@@ -149,9 +124,9 @@ with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp
             "body": json.dumps(result, ensure_ascii=False)
         }
 
-    except Exception:
+    except Exception as e:
         error_trace = traceback.format_exc()
-        print("💥 Excepción atrapada:")
+        print("ðŸ’¥ ExcepciÃ³n atrapada:")
         print(error_trace)
         return {
             "statusCode": 500,
@@ -164,4 +139,3 @@ with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp
                 "error": "Error al generar diagrama",
                 "trace": error_trace
             }, ensure_ascii=False)
-        }
