@@ -66,7 +66,15 @@ def handler(event, context):
         parsed = json.loads(event.get("body", event) or "{}")
         user_code = parsed.get("body", "")
         if not isinstance(user_code, str) or not user_code.strip():
-            return {"statusCode":400, "body":"El campo 'body' debe ser un string con código válido."}
+            return {
+                "statusCode": 400,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Headers": "*"
+                },
+                "body": json.dumps({"error": "El campo 'body' debe ser un string con código válido."})
+            }
 
         diagram_code = f"""
 from diagrams import Diagram, Cluster
@@ -87,8 +95,23 @@ with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp
 
         result["svg_image"] = replace_local_images_with_base64(svg_text)
 
-        return {"statusCode":200, "headers":{"Content-Type":"application/json"},
-                "body": json.dumps(result, ensure_ascii=False)}
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "*"
+            },
+            "body": json.dumps(result, ensure_ascii=False)
+        }
 
-    except Exception:
-        return {"statusCode":500, "body":"Error al generar diagrama:\n" + traceback.format_exc()}
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "*"
+            },
+            "body": json.dumps({"error": "Error al generar diagrama", "trace": traceback.format_exc()})
+        }
