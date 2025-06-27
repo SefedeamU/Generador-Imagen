@@ -1,2 +1,2 @@
-diagrams
+diagrams==0.24.4
 graphviz
