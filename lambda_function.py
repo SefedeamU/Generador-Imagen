@@ -63,8 +63,10 @@ def replace_local_images_with_base64(svg_text):
 
 def handler(event, context):
     try:
-        parsed = json.loads(event.get("body", event) or "{}")
+        raw_body = event.get("body", "")
+        parsed = json.loads(raw_body) if isinstance(raw_body, str) else raw_body
         user_code = parsed.get("body", "")
+
         if not isinstance(user_code, str) or not user_code.strip():
             return {
                 "statusCode": 400,
@@ -105,7 +107,7 @@ with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp
             "body": json.dumps(result, ensure_ascii=False)
         }
 
-    except Exception as e:
+    except Exception:
         return {
             "statusCode": 500,
             "headers": {
@@ -113,5 +115,8 @@ with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Headers": "*"
             },
-            "body": json.dumps({"error": "Error al generar diagrama", "trace": traceback.format_exc()})
+            "body": json.dumps({
+                "error": "Error al generar diagrama",
+                "trace": traceback.format_exc()
+            }, ensure_ascii=False)
         }
