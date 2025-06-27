@@ -47,6 +47,18 @@ from diagrams.gcp.operations import *
 from diagrams.gcp.security import *
 from diagrams.gcp.storage import *
 
+from diagrams.aws.compute import EC2, Lambda
+from diagrams.aws.database import RDS, DynamodbTable
+from diagrams.aws.integration import SQS
+from diagrams.aws.storage import S3
+from diagrams.aws.analytics import RedshiftDenseComputeNode, Glue
+from diagrams.aws.devtools import Codepipeline
+from diagrams.gcp.analytics import Bigquery
+from diagrams.gcp.data import Dataflow
+from diagrams.gcp.storage import GCS
+from diagrams.gcp.compute import AppEngine, Functions
+from diagrams.gcp.iot import IotCore
+from diagrams.gcp.logging import Logging, Monitoring
 
 def indent(text, prefix):
     return "\n".join(prefix + line if line.strip() else line for line in text.splitlines())
@@ -60,6 +72,19 @@ def replace_local_images_with_base64(svg_text):
                 img_b64 = base64.b64encode(f.read()).decode('utf-8')
             svg_text = svg_text.replace(img_path, f'data:image/png;base64,{img_b64}')
     return svg_text
+
+def ajustar_colores_svg(svg: str) -> str:
+    # Reemplaza fondos blancos en clusters por gris oscuro
+    svg = svg.replace('fill="#ffffff"', 'fill="#1a1a1a"')
+    svg = svg.replace('fill="#fff"', 'fill="#1a1a1a"')
+    svg = svg.replace('fill:white', 'fill:#1a1a1a')
+    svg = svg.replace('stroke="white"', 'stroke="#1a1a1a"')
+    svg = svg.replace('fill="white"', 'fill="#1a1a1a"')
+
+    # Forzar texto blanco
+    svg = re.sub(r'(<text[^>]*?)fill="[^"]*"', r'\1fill="white"', svg)
+    svg = re.sub(r'(style="[^"]*?)fill:\s?#?[0-9a-fA-F]{3,6};?', r'\1fill:white;', svg)
+    return svg
 
 def handler(event, context):
     print("🚀 Evento recibido:")
@@ -76,8 +101,6 @@ def handler(event, context):
         print("🖊️ Código de usuario:", user_code)
 
         if not isinstance(user_code, str) or not user_code.strip():
-            error_message = "El campo 'body' debe ser un string con código válido."
-            print("⚠️", error_message)
             return {
                 "statusCode": 400,
                 "headers": {
@@ -85,7 +108,7 @@ def handler(event, context):
                     "Access-Control-Allow-Origin": "*",
                     "Access-Control-Allow-Headers": "*"
                 },
-                "body": json.dumps({"error": error_message})
+                "body": json.dumps({"error": "El campo 'body' debe ser un string con código válido."})
             }
 
         diagram_code = f"""
@@ -111,8 +134,10 @@ with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp
         os.remove("/tmp/diagram.svg")
         print("📄 Imagen SVG leída")
 
-        result["svg_image"] = replace_local_images_with_base64(svg_text)
-        print("🧪 SVG procesado con imágenes embebidas")
+        svg_with_images = replace_local_images_with_base64(svg_text)
+        svg_final = ajustar_colores_svg(svg_with_images)
+        result["svg_image"] = svg_final
+        print("🧪 SVG procesado con colores corregidos")
 
         return {
             "statusCode": 200,
@@ -124,7 +149,7 @@ with Diagram("Mi Diagrama", show=False, outformat=["png", "svg"], filename="/tmp
             "body": json.dumps(result, ensure_ascii=False)
         }
 
-    except Exception as e:
+    except Exception:
         error_trace = traceback.format_exc()
         print("💥 Excepción atrapada:")
         print(error_trace)
