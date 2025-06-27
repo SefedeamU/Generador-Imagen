@@ -1,63 +1,85 @@
 import json, os, base64, traceback, re
 from diagrams import Diagram, Cluster
 
-# AWS
-from diagrams.aws.compute import EC2, ECS, EKS, Lambda
-from diagrams.aws.database import RDS, DynamoDB, Redshift, ElastiCache
-from diagrams.aws.network import ELB, VPC, Route53, CloudFront
-from diagrams.aws.storage import S3, EFS
-from diagrams.aws.integration import SQS, SNS
-# Azure
-from diagrams.azure.compute import VirtualMachines, FunctionApps, AppServices
-from diagrams.azure.database import Cosmosdb, Sqldatabase
-from diagrams.azure.network import AppGateway, VirtualNetworks
-from diagrams.azure.storage import BlobStorage, StorageAccounts
-# GCP
-from diagrams.gcp.compute import AppEngine, GCE, Functions
-from diagrams.gcp.database import SQL, Spanner, Bigquery
-from diagrams.gcp.analytics import PubSub, Dataflow
-from diagrams.gcp.storage import GCS, Storage
-from diagrams.gcp.ml import AutoML
-# Kubernetes
-from diagrams.k8s.compute import Pod, Deployment, StatefulSet
-from diagrams.k8s.network import Service, Ingress
-from diagrams.k8s.storage import PV, PVC, StorageClass
-from diagrams.k8s.clusterconfig import HPA
-# Alibaba Cloud
-from diagrams.alibabacloud.compute import ECS as AlibabaECS
-from diagrams.alibabacloud.storage import ObjectTableStore
-# Oracle Cloud (OCI)
-from diagrams.oci.compute import VirtualMachine, Container
-from diagrams.oci.network import Firewall
-from diagrams.oci.storage import FileStorage, StorageGateway
-# OpenStack
-from diagrams.openstack.compute import Nova
-from diagrams.openstack.network import Neutron
-from diagrams.openstack.storage import Cinder
-# IBM
-from diagrams.ibm.compute import IKS, CloudFoundry
-# Firebase
-from diagrams.firebase.database import Firestore
-from diagrams.firebase.storage import Storage as FBStorage
-# DigitalOcean
-from diagrams.digitalocean.compute import Droplet
-from diagrams.digitalocean.database import Database
-from diagrams.digitalocean.storage import Volume
-# Elastic
-from diagrams.elastic.elasticsearch import Elasticsearch
-from diagrams.elastic.kibana import Kibana
-# Outscale
-from diagrams.outscale.compute import VM
-from diagrams.outscale.network import Net
-# On‑Premises / Generic
-from diagrams.onprem.compute import Server
-from diagrams.onprem.network import Nginx
-from diagrams.onprem.database import PostgreSQL
-from diagrams.onprem.inmemory import Redis
-# SaaS / Programming / C4
-from diagrams.saas.database import MySQL
-from diagrams.programming.language import Python
-from diagrams.c4 import Person, SystemBoundary
+from diagrams.aws.analytics import (
+    ElasticsearchService, EMRCluster, EMREngine, EMR,
+    GlueCrawlers, GlueDataCatalog, Glue,
+    KinesisDataAnalytics, KinesisDataFirehose, KinesisDataStreams, KinesisVideoStreams,
+    LakeFormation, ManagedStreamingForKafka, Quicksight,
+    RedshiftDenseComputeNode, RedshiftDenseStorageNode, Redshift
+)
+from diagrams.aws.ar import ArVr, Sumerian
+from diagrams.aws.blockchain import BlockchainResource, Blockchain, ManagedBlockchain, QuantumLedgerDatabaseQldb
+from diagrams.aws.business import AlexaForBusiness, BusinessApplications, Chime, Workmail
+from diagrams.aws.compute import (
+    AppRunner, ApplicationAutoScaling, Batch, ComputeOptimizer, Compute,
+    EC2Ami, EC2AutoScaling, EC2ContainerRegistryImage, EC2ContainerRegistryRegistry,
+    EC2ContainerRegistry, EC2ElasticIpAddress, EC2ImageBuilder,
+    EC2Instance, EC2Instances, EC2Rescue, EC2SpotInstance, EC2,
+    ElasticBeanstalkApplication, ElasticBeanstalkDeployment, ElasticBeanstalk,
+    ElasticContainerServiceContainer, ElasticContainerServiceService, ElasticContainerService,
+    ElasticKubernetesService, Fargate, LambdaFunction, Lambda, Lightsail,
+    LocalZones, Outposts, ServerlessApplicationRepository, ThinkboxDeadline,
+    ThinkboxDraft, ThinkboxFrost, ThinkboxKrakatoa, ThinkboxSequoia, ThinkboxStoke,
+    ThinkboxXmesh, VmwareCloudOnAWS, Wavelength
+)
+from diagrams.aws.cost import (
+    Budgets, CostAndUsageReport, CostExplorer, CostManagement,
+    ReservedInstanceReporting, SavingsPlans
+)
+from diagrams.aws.database import (
+    AuroraInstance, Aurora,
+    DatabaseMigrationServiceDatabaseMigrationWorkflow, DatabaseMigrationService,
+    Database, DocumentdbMongodbCompatibility, DynamodbAttribute, DynamodbAttributes,
+    DynamodbDax, DynamodbGlobalSecondaryIndex, DynamodbItem, DynamodbItems,
+    DynamodbStreams, DynamodbTable, Dynamodb,
+    ElasticacheCacheNode, ElasticacheForMemcached, ElasticacheForRedis, Elasticache,
+    KeyspacesManagedApacheCassandraService, Neptune,
+    QuantumLedgerDatabaseQldb, RDSInstance, RDSMariadbInstance, RDSMysqlInstance,
+    RDSOnVmware, RDSOracleInstance, RDSPostgresqlInstance, RDSSqlServerInstance,
+    RDS, RedshiftDenseComputeNode, RedshiftDenseStorageNode, Redshift, Timestream
+)
+from diagrams.aws.devtools import (
+    CloudDevelopmentKit, Cloud9Resource, Cloud9,
+    Codeartifact, Codebuild, Codecommit, Codedeploy, Codepipeline, Codestar,
+    CommandLineInterface, DeveloperTools, ToolsAndSdks, XRay
+)
+from diagrams.aws.integration import SQS, SNS, EventBridge, StepFunctions  # ajusta según versión instalada
+from diagrams.aws.iot import IoTCore, IoTPipeline, IoTSiteWise  # etc.
+from diagrams.aws.management import Cloudwatch, Config, Cloudtrail, GuardDuty  # ajusta según versión
+from diagrams.aws.media import MediaConvert, MediaLive, MediaPackage, MediaStore  # etc.
+from diagrams.aws.ml import SageMaker, Comprehend, Rekognition, Translate  # etc.
+from diagrams.aws.mobile import MobileAnalytics, Pinpoint, CognitoIdentity  # etc.
+from diagrams.aws.network import (
+    ELB, Route53, VPC, CloudFront, VPN, DirectConnect, API, TransitGateway  # etc.
+)
+from diagrams.aws.security import IAM, KMS, Shield, WAF, SecurityHub  # etc.
+from diagrams.aws.storage import S3, EFS, Glacier, StorageGateway, Snowball, SnowballEdge, Snowmobile
+
+from diagrams.gcp.analytics import Bigquery, Composer, DataCatalog, DataFusion, Dataflow, Datalab, Dataprep, Dataproc, Genomics, Pubsub
+from diagrams.gcp.api import APIGateway, Apigee, Endpoints
+from diagrams.gcp.compute import AppEngine, ComputeEngine, ContainerOptimizedOS, Functions, GKEOnPrem, GPU, KubernetesEngine, Run
+from diagrams.gcp.database import Bigtable, Datastore, Firestore, Memorystore, Spanner, SQL
+from diagrams.gcp.devtools import Build, CodeForIntellij, Code, ContainerRegistry, Scheduler, SDK, SourceRepositories, Tasks, TestLab, ToolsForEclipse, ToolsForPowershell
+from diagrams.gcp.iot import IotCore
+from diagrams.gcp.migration import TransferAppliance
+from diagrams.gcp.ml import (
+    AdvancedSolutionsLab, AIHub, AIPlatformDataLabelingService, AIPlatform,
+    AutomlNaturalLanguage, AutomlTables, AutomlTranslation, AutomlVideoIntelligence,
+    AutomlVision, Automl, DialogFlowEnterpriseEdition, InferenceAPI, JobsAPI,
+    NaturalLanguageAPI, RecommendationsAI, SpeechToText, TextToSpeech, TPU,
+    TranslationAPI, VideoIntelligenceAPI, VisionAPI
+)
+from diagrams.gcp.network import (
+    Armor, CDN, DedicatedInterconnect, DNS, ExternalIpAddresses,
+    FirewallRules, LoadBalancing, NAT, Network, PartnerInterconnect,
+    PremiumNetworkTier, Router, Routes, StandardNetworkTier, TrafficDirector,
+    VirtualPrivateCloud, VPN
+)
+from diagrams.gcp.operations import Logging, Monitoring
+from diagrams.gcp.security import Iam, IAP, KeyManagementService, ResourceManager, SecurityCommandCenter, SecurityScanner
+from diagrams.gcp.storage import Filestore, PersistentDisk, Storage
+
 
 def indent(text, prefix):
     return "\n".join(prefix + line if line.strip() else line for line in text.splitlines())
